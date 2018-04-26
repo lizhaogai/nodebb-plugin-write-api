@@ -25,13 +25,108 @@ module.exports = function(/*middleware*/) {
 		});
 	});
 
+	app.post('/chats/create', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!utils.checkRequired(['uid', 'toUid'], req, res)) {
+			return false;
+		}
+
+		Messaging.newRoom(req.body.uid, [req.body.toUid], function(err, id) {
+			return errorHandler.handle(err, res, {
+				roomId: id
+			});
+		});
+	});
+
+	app.post('/chatRoom/enter', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!utils.checkRequired(['uid', 'toUid', 'roomId'], req, res)) {
+			return false;
+		}
+
+		Messaging.addUsersToRoom(req.body.uid, [req.body.toUid], req.body.roomId, function(err, success) {
+			return errorHandler.handle(err, res, {
+				success: success
+			});
+		});
+	});
+
+	app.post('/chatRoom/leave', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!utils.checkRequired(['uid', 'toUid', 'roomId'], req, res)) {
+			return false;
+		}
+
+		Messaging.removeUsersFromRoom(req.body.uid, [req.body.toUid], req.body.roomId, function(err, success) {
+			return errorHandler.handle(err, res, {
+				success: success
+			});
+		});
+	});
+
+	app.get('/chatRoom/getUser', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!req.query.roomId) {
+			return false;
+		}
+
+		Messaging.getUidsInRoom(req.query.roomId, 0, -1, function(err, uids) {
+			return errorHandler.handle(err, res, {
+				uids: uids
+			});
+		});
+	});
+
+	app.get('/chatRoom/messages', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!req.query.roomId || !req.query.uid) {
+			return false;
+		}
+
+		Messaging.getMessages({
+			roomId: req.query.roomId,
+			uid: req.query.uid,
+			start: req.query.start || 0,
+			stop: req.query.stop || -1,
+			callerUid: req.query.uid
+		}, function(err, messages) {
+			return errorHandler.handle(err, res, {
+				messages: messages
+			});
+		});
+	});
+
+	app.post('/chatRoom/message/send', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!utils.checkRequired(['message', 'fromuid', 'roomId'], req, res)) {
+			return false;
+		}
+
+		var timestamp = Date.now();
+
+		Messaging.addMessage(req.body.fromuid, req.body.roomId, req.body.message, timestamp, function(err, result) {
+			return errorHandler.handle(err, res, {
+				result: result
+			});
+		});
+	});
+
+	app.get('/chatRoom/unread/count', apiMiddleware.requireUser, apiMiddleware.requireAdmin, function(req, res) {
+		if (!req.query.userId) {
+			return false;
+		}
+
+		Messaging.getUnreadCount(req.query.userId, function(err, count) {
+			return errorHandler.handle(err, res, {
+				count: count
+			});
+		});
+	});
+
 	app.route('/:uid')
 		.put(apiMiddleware.requireUser, apiMiddleware.exposeAdmin, function(req, res) {
 			if (parseInt(req.params.uid, 10) !== parseInt(req.user.uid, 10) && !res.locals.isAdmin) {
 				return errorHandler.respond(401, res);
 			}
 
-			Users.updateProfile(req.params.uid, req.body, function(err) {
+			// `uid` in `updateProfile` refers to calling user, not target user
+			req.body.uid = req.params.uid;
+
+			Users.updateProfile(req.user.uid, req.body, function(err) {
 				return errorHandler.handle(err, res);
 			});
 		})
