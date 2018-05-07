@@ -65,8 +65,14 @@ an administrative uid. All other uids passed in will result in an error.
         * `PUT /:slug/membership`
             * Joins a group (or requests membership if it is a private group)
             * **Accepts**: No parameters
+        * `PUT /:slug/membership/:uid`
+            * Adds a user to a group (The calling user has to be an administrator)
+            * **Accepts**: No parameters
         * `DELETE /:slug/membership`
             * Leaves a group
+            * **Accepts**: No parameters
+        * `DELETE /:slug/membership/:uid`
+            * Removes a user from a group (The calling user has to be an administrator)
             * **Accepts**: No parameters
     * `/categories`
         * `POST /`
@@ -75,7 +81,7 @@ an administrative uid. All other uids passed in will result in an error.
             * **Accepts**: `description`, `bgColor`, `color`, `parentCid`, `class`
         * `PUT /:cid`
             * Updates a category's data
-            * **Accepts**: `name`, `description`, `bgColor`, `color`, `parentCid`
+            * **Accepts**: `name`, `description`, `bgColor`, `color`, `parentCid`, `backgroundImage`
         * `DELETE /:cid`
             * Purges a category, including all topics and posts inside of it (**Careful**: There is no confirmation!)
             * **Accepts**: No parameters
@@ -148,9 +154,15 @@ an administrative uid. All other uids passed in will result in an error.
             * Unvotes a post
             * **Accepts**: No parameters
     * `/util`
-      * `POST /upload`
-      * Uploads a File
-      * **Accepts**: A multipart files array `files[]`
+        * `POST /upload`
+            * Uploads a File
+            * **Accepts**: A multipart files array `files[]`
+        * `POST /maintenance`
+            * Enables Maintenance Mode
+            * **Accepts**: No parameters
+        * `DELETE /maintenance`
+            * Disabled Maintenance Mode
+            * **Accepts**: No parameters
 
 ## Changes from API v1
 
